@@ -1,5 +1,6 @@
 package baldwin.com.shuffleboard;
 
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -15,6 +16,7 @@ import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -39,7 +41,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        TextView tvTest = (TextView) findViewById(R.id.tv_test);
+        final TextView tvTest = (TextView) findViewById(R.id.tv_test);
 
         //Setup player1 scores
         TextView tv_p1 = (TextView) findViewById(R.id.tv_p1);
@@ -83,7 +85,8 @@ public class MainActivity extends AppCompatActivity {
 
             public workerThread() {
                 //TODO implement setup get corret UUID for bluetooth device
-                UUID uuid = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee"); //Standard SerialPortService ID
+                //UUID uuid = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee"); //Standard SerialPortService ID think it is for raspberry
+                UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
                 try {
 
                     mSocket = mDevice.createRfcommSocketToServiceRecord(uuid);
@@ -119,7 +122,9 @@ public class MainActivity extends AppCompatActivity {
 
                             for (int i = 0; i < bytesAvailable; i++) {
                                 byte b = packetBytes[i];
-                                if (b == delimiter) {
+                                //if (b == delimiter) {
+                                if (true) {
+                                    readBuffer[readBufferPosition++] = b;  //test was copied from else
                                     byte[] encodedBytes = new byte[readBufferPosition];
                                     System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
                                     final String data = new String(encodedBytes, "US-ASCII");
@@ -129,11 +134,11 @@ public class MainActivity extends AppCompatActivity {
                                     handler.post(new Runnable() {
                                         public void run() {
                                             //TODO tun updates to views and scores based on data
-
+                                            tvTest.setText(data);
                                         }
                                     });
 
-                                    workDone = true;
+                                    //workDone = true;
                                     break;
 
 
@@ -156,6 +161,24 @@ public class MainActivity extends AppCompatActivity {
                 }
 
             }
+        }//end of worker thread
+
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBluetooth, 0);
         }
+
+        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        if (pairedDevices.size() > 0) {
+            for (BluetoothDevice device : pairedDevices) {
+                if (device.getName().equals("HC-06")) //Note, you will need to change this to match the name of your device
+                {
+                    Log.e("Shuffleboard", device.getName());
+                    mDevice = device;
+                    break;
+                }
+            }
+        }
+        (new Thread(new workerThread())).start();
     }//end of onCreate
 }
