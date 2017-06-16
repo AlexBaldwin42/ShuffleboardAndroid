@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.test.suitebuilder.TestMethod;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -34,7 +35,15 @@ public class MainActivity extends AppCompatActivity {
 
     //Holds score for current player and turn
     int currentRoundScore = 0;
-    int currentRoundShotsTaken = 0;
+    int shotCounter = 0;
+    int currentRound = 0;
+    boolean p1Turn = true;
+
+    //setup Textviews
+    TextView tv_p1_final;
+    TextView tv_p2_final;
+    TextView[] tvPlayer1RoundScores = new TextView[5];
+    TextView[] tvPlayer2RoundScores = new TextView[5];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,9 +53,10 @@ public class MainActivity extends AppCompatActivity {
         final TextView tvTest = (TextView) findViewById(R.id.tv_test);
 
         //Setup player1 scores
-        TextView tv_p1 = (TextView) findViewById(R.id.tv_p1);
+        tv_p1_final = (TextView) findViewById(R.id.tv_p1_final);
+        final TextView tv_p1 = (TextView) findViewById(R.id.tv_p1);
         tv_p1.setBackgroundColor(Color.RED);
-        TextView[] tvPlayer1RoundScores = new TextView[5];
+
         tvPlayer1RoundScores[0] = (TextView) findViewById(R.id.tv_p1_round1);
         tvPlayer1RoundScores[1] = (TextView) findViewById(R.id.tv_p1_round2);
         tvPlayer1RoundScores[2] = (TextView) findViewById(R.id.tv_p1_round3);
@@ -54,7 +64,9 @@ public class MainActivity extends AppCompatActivity {
         tvPlayer1RoundScores[4] = (TextView) findViewById(R.id.tv_p1_round5);
 
         //Setup player2 scores
-        TextView[] tvPlayer2RoundScores = new TextView[5];
+        tv_p2_final = (TextView) findViewById(R.id.tv_p2_final);
+        final TextView tv_p2 = (TextView) findViewById(R.id.tv_p2);
+
         tvPlayer2RoundScores[0] = (TextView) findViewById(R.id.tv_p2_round1);
         tvPlayer2RoundScores[1] = (TextView) findViewById(R.id.tv_p2_round2);
         tvPlayer2RoundScores[2] = (TextView) findViewById(R.id.tv_p2_round3);
@@ -62,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
         tvPlayer2RoundScores[4] = (TextView) findViewById(R.id.tv_p2_round5);
 
         //Setup round headers
-        TextView[] tvRoundHeaders = new TextView[6];
+        final TextView[] tvRoundHeaders = new TextView[6];
         tvRoundHeaders[0] = (TextView) findViewById(R.id.tv_round1);
         tvRoundHeaders[0].setBackgroundColor(Color.RED);
         tvRoundHeaders[1] = (TextView) findViewById(R.id.tv_round2);
@@ -72,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
         tvRoundHeaders[5] = (TextView) findViewById(R.id.tv_final);
 
         //Shot counter for current player
-        TextView tvShotsTaken = (TextView) findViewById(R.id.tv_shots_taken);
+        final TextView tvShotsTaken = (TextView) findViewById(R.id.tv_shots_taken);
 
         //Bluetooth adapter
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -85,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
 
             public workerThread() {
                 //TODO implement setup get corret UUID for bluetooth device
-                //UUID uuid = UUID.fromString("94f39d29-7d6d-437d-973b-fba39e49d4ee"); //Standard SerialPortService ID think it is for raspberry
                 UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
                 try {
 
@@ -105,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
                 //TODO setup read from bluetooth
                 while (!Thread.currentThread().isInterrupted()) {
                     int bytesAvailable;
-                    boolean workDone = false;
 
                     try {
 
@@ -122,34 +132,75 @@ public class MainActivity extends AppCompatActivity {
 
                             for (int i = 0; i < bytesAvailable; i++) {
                                 byte b = packetBytes[i];
-                                //if (b == delimiter) {
-                                if (true) {
-                                    readBuffer[readBufferPosition++] = b;  //test was copied from else
-                                    byte[] encodedBytes = new byte[readBufferPosition];
-                                    System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
-                                    final String data = new String(encodedBytes, "US-ASCII");
-                                    readBufferPosition = 0;
 
-                                    //The variable data now contains our full command
-                                    handler.post(new Runnable() {
-                                        public void run() {
-                                            //TODO tun updates to views and scores based on data
-                                            tvTest.setText(data);
+
+                                readBuffer[readBufferPosition++] = b;
+                                byte[] encodedBytes = new byte[readBufferPosition];
+                                System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
+                                final String data = new String(encodedBytes, "US-ASCII");
+                                readBufferPosition = 0;
+                                final int sensorNumber = Integer.parseInt(data);
+                                final int shotScore;
+                                Log.e("Read data", data);
+                                //The variable data now contains our full command
+                                handler.post(new Runnable() {
+                                    public void run() {
+                                        //TODO tun updates to views and scores based on data
+                                        tvTest.setText(data);
+
+                                        Log.e("workerthread current=", Integer.toString(currentRound));
+                                        if (sensorNumber != 5) {
+                                            //A shot was scored
+                                            if (sensorNumber == 0) {
+                                                calculateScore(3);
+                                            }
+                                            if (sensorNumber == 1) {
+                                                calculateScore(5);
+                                            }
+                                            if (sensorNumber == 2) {
+                                                calculateScore(6);
+                                            }
+                                            if (sensorNumber == 3) {
+                                                calculateScore(4);
+                                            }
                                         }
-                                    });
 
-                                    //workDone = true;
-                                    break;
+                                        //Shot is taken increase shot counter
+                                        if (sensorNumber == 5) {
+                                            shotCounter += 1;
+
+                                            if (shotCounter > 4) {
+                                                //players turn is over
+                                                shotCounter = 0;
 
 
-                                } else {
-                                    readBuffer[readBufferPosition++] = b;
-                                }
-                            }
+                                                if (p1Turn) {
+                                                    p1Turn = false;
+                                                    tv_p1.setBackgroundColor(Color.WHITE);
+                                                    tv_p2.setBackgroundColor(Color.RED);
 
-                            if (workDone == true) {
-                                mSocket.close();
+                                                } else {
+                                                    //player 2 turn is over
+                                                    p1Turn = true;
+                                                    tv_p1.setBackgroundColor(Color.RED);
+                                                    tv_p2.setBackgroundColor(Color.WHITE);
+                                                    //Current round is over
+                                                    currentRound += 1;
+                                                    if (currentRound > 4) {
+                                                        //Game is over
+                                                        tvTest.setText("Game is over");
+                                                    }
+                                                    tvRoundHeaders[currentRound - 1].setBackgroundColor(Color.WHITE);
+                                                    tvRoundHeaders[currentRound].setBackgroundColor(Color.RED);
+                                                }
+                                            }
+                                            tvShotsTaken.setText(shotCounter + 1 + "/5");
+
+                                        }
+                                    }
+                                });
                                 break;
+
                             }
 
                         }
@@ -181,4 +232,23 @@ public class MainActivity extends AppCompatActivity {
         }
         (new Thread(new workerThread())).start();
     }//end of onCreate
+
+    public void calculateScore(int score) {
+        //Take int and add to score
+        //Todo currentRound is always 5
+        if (p1Turn) {
+            p1FinalScore += score;
+            tv_p1_final.setText(Integer.toString(p1FinalScore));
+            currentRoundScore += score;
+            Log.e("calculateScore round =", Integer.toString(currentRound));
+            tvPlayer1RoundScores[currentRound].setText(Integer.toString(currentRoundScore));
+
+        } else {
+            p2FinalScore += score;
+            tv_p2_final.setText(Integer.toString(p2FinalScore));
+            currentRoundScore += score;
+            tvPlayer2RoundScores[currentRound].setText(Integer.toString(currentRoundScore));
+        }
+
+    }
 }
