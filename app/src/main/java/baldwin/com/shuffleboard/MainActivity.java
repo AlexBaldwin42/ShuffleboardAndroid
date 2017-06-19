@@ -7,6 +7,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.test.suitebuilder.TestMethod;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.TextView;
 
 import android.bluetooth.BluetoothAdapter;
@@ -19,6 +21,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Set;
 import java.util.UUID;
+
+//Todo restore save state
+//Todo disregard bad bluetooth inputs check to see if int
+//Todo add arrays for players 1, and 2 scores
+//Todo make a function that updates the views.
 
 
 public class MainActivity extends AppCompatActivity {
@@ -38,23 +45,30 @@ public class MainActivity extends AppCompatActivity {
     int shotCounter = 0;
     int currentRound = 0;
     boolean p1Turn = true;
+    int sensorNumber;
 
     //setup Textviews
     TextView tv_p1_final;
+    TextView tv_p1;
     TextView tv_p2_final;
+    TextView tv_p2;
     TextView[] tvPlayer1RoundScores = new TextView[5];
     TextView[] tvPlayer2RoundScores = new TextView[5];
+    TextView[] tvRoundHeaders = new TextView[6];
+    TextView tvShotsTaken;
+
+    TextView tvTest;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        final TextView tvTest = (TextView) findViewById(R.id.tv_test);
+        tvTest = (TextView) findViewById(R.id.tv_test);
 
         //Setup player1 scores
         tv_p1_final = (TextView) findViewById(R.id.tv_p1_final);
-        final TextView tv_p1 = (TextView) findViewById(R.id.tv_p1);
+        tv_p1 = (TextView) findViewById(R.id.tv_p1);
         tv_p1.setBackgroundColor(Color.RED);
 
         tvPlayer1RoundScores[0] = (TextView) findViewById(R.id.tv_p1_round1);
@@ -65,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
 
         //Setup player2 scores
         tv_p2_final = (TextView) findViewById(R.id.tv_p2_final);
-        final TextView tv_p2 = (TextView) findViewById(R.id.tv_p2);
+        tv_p2 = (TextView) findViewById(R.id.tv_p2);
 
         tvPlayer2RoundScores[0] = (TextView) findViewById(R.id.tv_p2_round1);
         tvPlayer2RoundScores[1] = (TextView) findViewById(R.id.tv_p2_round2);
@@ -74,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         tvPlayer2RoundScores[4] = (TextView) findViewById(R.id.tv_p2_round5);
 
         //Setup round headers
-        final TextView[] tvRoundHeaders = new TextView[6];
+
         tvRoundHeaders[0] = (TextView) findViewById(R.id.tv_round1);
         tvRoundHeaders[0].setBackgroundColor(Color.RED);
         tvRoundHeaders[1] = (TextView) findViewById(R.id.tv_round2);
@@ -84,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         tvRoundHeaders[5] = (TextView) findViewById(R.id.tv_final);
 
         //Shot counter for current player
-        final TextView tvShotsTaken = (TextView) findViewById(R.id.tv_shots_taken);
+        tvShotsTaken = (TextView) findViewById(R.id.tv_shots_taken);
 
         //Bluetooth adapter
         BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -139,8 +153,15 @@ public class MainActivity extends AppCompatActivity {
                                 System.arraycopy(readBuffer, 0, encodedBytes, 0, encodedBytes.length);
                                 final String data = new String(encodedBytes, "US-ASCII");
                                 readBufferPosition = 0;
-                                final int sensorNumber = Integer.parseInt(data);
-                                final int shotScore;
+
+                                try {
+                                    sensorNumber = Integer.parseInt(data);
+                                } catch (Exception e) {
+                                    //fake data to get ride of bad data
+                                    Log.e("MainActivity runable", "Bluetooth read not an integer");
+                                    sensorNumber = 6;
+                                }
+
                                 Log.e("Read data", data);
                                 //The variable data now contains our full command
                                 handler.post(new Runnable() {
@@ -151,16 +172,16 @@ public class MainActivity extends AppCompatActivity {
                                         Log.e("workerthread current=", Integer.toString(currentRound));
                                         if (sensorNumber != 5) {
                                             //A shot was scored
-                                            if (sensorNumber == 0) {
+                                            if (sensorNumber == 1) {
                                                 calculateScore(3);
                                             }
-                                            if (sensorNumber == 1) {
+                                            if (sensorNumber == 2) {
                                                 calculateScore(5);
                                             }
-                                            if (sensorNumber == 2) {
+                                            if (sensorNumber == 3) {
                                                 calculateScore(6);
                                             }
-                                            if (sensorNumber == 3) {
+                                            if (sensorNumber == 4) {
                                                 calculateScore(4);
                                             }
                                         }
@@ -219,9 +240,15 @@ public class MainActivity extends AppCompatActivity {
             startActivityForResult(enableBluetooth, 0);
         }
 
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+        //Todo take out this hardcoded address
+        //mDevice = mBluetoothAdapter.getRemoteDevice("20:16:12:12:83:14");
+        mDevice = mBluetoothAdapter.getRemoteDevice("20:16:03:25:46:93");   //currently installed on shuffleboard
+        //Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
+/*
         if (pairedDevices.size() > 0) {
+
             for (BluetoothDevice device : pairedDevices) {
+                pairedDevices.
                 if (device.getName().equals("HC-06")) //Note, you will need to change this to match the name of your device
                 {
                     Log.e("Shuffleboard", device.getName());
@@ -229,13 +256,70 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 }
             }
-        }
+        }*/
         (new Thread(new workerThread())).start();
     }//end of onCreate
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int itemId = item.getItemId();
+
+        switch (itemId) {
+            case R.id.action_new_game:
+                //todo reset scores
+                p1Turn = true;
+                p1FinalScore = 0;
+                p2FinalScore = 0;
+                currentRoundScore = 0;
+                tvRoundHeaders[currentRound].setBackgroundColor(Color.WHITE);
+                tvRoundHeaders[0].setBackgroundColor(Color.RED);
+                tv_p1.setBackgroundColor(Color.RED);
+                tv_p2.setBackgroundColor(Color.WHITE);
+                currentRound = 0;
+                tvShotsTaken.setText("0/5");
+
+                tvTest.setText("");
+
+                for (int i = 0; i < 4; i++) {
+                    tvPlayer1RoundScores[i].setText("0");
+                    tvPlayer2RoundScores[i].setText("0");
+                    tv_p1_final.setText("0");
+                    tv_p2_final.setText("0");
+                }
+                break;
+            case R.id.action_next_turn:
+                currentRoundScore = 0;
+                if (p1Turn == true) {
+                    p1Turn = false;
+                    tv_p1.setBackgroundColor(Color.WHITE);
+                    tv_p2.setBackgroundColor(Color.RED);
+                } else {
+                    p1Turn = true;
+                    tv_p2.setBackgroundColor(Color.WHITE);
+                    tv_p1.setBackgroundColor(Color.RED);
+                    tvRoundHeaders[currentRound].setBackgroundColor(Color.WHITE);
+                    currentRound += 1;
+                    tvRoundHeaders[currentRound].setBackgroundColor(Color.RED);
+                    if (currentRound > 4) {
+                        //Game is over
+                        tvTest.setText("Game is over");
+                    }
+                }
+                break;
+        }
+
+
+        return super.onOptionsItemSelected(item);
+    }
+
     public void calculateScore(int score) {
-        //Take int and add to score
-        //Todo currentRound is always 5
+
         if (p1Turn) {
             p1FinalScore += score;
             tv_p1_final.setText(Integer.toString(p1FinalScore));
