@@ -190,10 +190,10 @@ public class MainActivity extends AppCompatActivity {
                                         if (sensorNumber == 5) {
                                             shotCounter += 1;
 
-                                            if (shotCounter > 4) {
+                                            if (shotCounter == 5) {
                                                 //players turn is over
                                                 shotCounter = 0;
-
+                                                currentRoundScore = 0;
 
                                                 if (p1Turn) {
                                                     p1Turn = false;
@@ -215,7 +215,7 @@ public class MainActivity extends AppCompatActivity {
                                                     tvRoundHeaders[currentRound].setBackgroundColor(Color.RED);
                                                 }
                                             }
-                                            tvShotsTaken.setText(shotCounter + 1 + "/5");
+                                            tvShotsTaken.setText(shotCounter + 0 + "/5");
 
                                         }
                                     }
