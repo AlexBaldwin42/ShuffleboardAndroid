@@ -314,6 +314,7 @@ public class MainActivity extends AppCompatActivity {
                 p1FinalScore = 0;
                 p2FinalScore = 0;
                 currentRoundScore = 0;
+                shotCounter = 0;
                 tvRoundHeaders[currentRound].setBackgroundColor(Color.WHITE);
                 tvRoundHeaders[0].setBackgroundColor(Color.RED);
                 tv_p1.setBackgroundColor(Color.RED);
