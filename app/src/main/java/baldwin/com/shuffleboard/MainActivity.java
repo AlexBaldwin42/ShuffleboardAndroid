@@ -34,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
     BluetoothDevice mDevice = null;
 
     //For bluetooth
-    final byte delimiter = 33;
     int readBufferPosition = 0;
 
     int p1FinalScore = 0;
@@ -42,9 +41,13 @@ public class MainActivity extends AppCompatActivity {
 
     //Holds score for current player and turn
     int currentRoundScore = 0;
+    //How many shots the current plater has taken
     int shotCounter = 0;
     int currentRound = 0;
     boolean p1Turn = true;
+    //only true when first shot is taken, helps with logic
+    boolean firstShot = true;
+    //The sensor number that was red and sent by the bluetooth device
     int sensorNumber;
 
     //setup Textviews
@@ -157,7 +160,7 @@ public class MainActivity extends AppCompatActivity {
                                 try {
                                     sensorNumber = Integer.parseInt(data);
                                 } catch (Exception e) {
-                                    //fake data to get ride of bad data
+                                    //Fake data stored to sensorNumber to get rid of bad data
                                     Log.e("MainActivity runable", "Bluetooth read not an integer");
                                     sensorNumber = 6;
                                 }
@@ -186,33 +189,59 @@ public class MainActivity extends AppCompatActivity {
                                             }
                                         }
 
-                                        //Shot is taken increase shot counter
+
                                         if (sensorNumber == 5) {
+
+                                            //Shot is taken increase shot counter
                                             shotCounter += 1;
+
+                                            //Advances the players turn on shot
+                                            // counter 0 to count if score was made last turn
+                                            if (shotCounter == 1) {
+                                                if (p1Turn) {
+                                                    if (!firstShot) {
+                                                        p1Turn = false;
+                                                        currentRoundScore = 0;
+                                                    }
+                                                } else {
+                                                    p1Turn = true;
+                                                    //Current round is over
+
+                                                    currentRound += 1;
+                                                    currentRoundScore = 0;
+                                                    /*
+                                                    if (currentRound > 4) {
+                                                        //Game is over
+                                                        tvTest.setText("Game is over");
+                                                    }*/
+                                                }
+                                            }
+                                            if (shotCounter > 1) {
+                                                firstShot = false;
+                                            }
 
                                             if (shotCounter == 5) {
                                                 //players turn is over
                                                 shotCounter = 0;
-                                                currentRoundScore = 0;
+
 
                                                 if (p1Turn) {
-                                                    p1Turn = false;
+
                                                     tv_p1.setBackgroundColor(Color.WHITE);
                                                     tv_p2.setBackgroundColor(Color.RED);
 
                                                 } else {
                                                     //player 2 turn is over
-                                                    p1Turn = true;
+
                                                     tv_p1.setBackgroundColor(Color.RED);
                                                     tv_p2.setBackgroundColor(Color.WHITE);
-                                                    //Current round is over
-                                                    currentRound += 1;
-                                                    if (currentRound > 4) {
-                                                        //Game is over
+
+                                                    tvRoundHeaders[currentRound].setBackgroundColor(Color.WHITE);
+                                                    tvRoundHeaders[currentRound + 1].setBackgroundColor(Color.RED);
+
+                                                    if(currentRound == 4){
                                                         tvTest.setText("Game is over");
                                                     }
-                                                    tvRoundHeaders[currentRound - 1].setBackgroundColor(Color.WHITE);
-                                                    tvRoundHeaders[currentRound].setBackgroundColor(Color.RED);
                                                 }
                                             }
                                             tvShotsTaken.setText(shotCounter + 0 + "/5");
@@ -235,7 +264,9 @@ public class MainActivity extends AppCompatActivity {
             }
         }//end of worker thread
 
-        if (!mBluetoothAdapter.isEnabled()) {
+        if (!mBluetoothAdapter.isEnabled())
+
+        {
             Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBluetooth, 0);
         }
@@ -257,7 +288,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }*/
-        (new Thread(new workerThread())).start();
+        (new
+
+                Thread(new workerThread())).
+
+                start();
+
     }//end of onCreate
 
     @Override
@@ -272,8 +308,9 @@ public class MainActivity extends AppCompatActivity {
 
         switch (itemId) {
             case R.id.action_new_game:
-                //todo reset scores
+
                 p1Turn = true;
+                firstShot = true;
                 p1FinalScore = 0;
                 p2FinalScore = 0;
                 currentRoundScore = 0;
@@ -316,6 +353,17 @@ public class MainActivity extends AppCompatActivity {
 
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
     }
 
     public void calculateScore(int score) {
