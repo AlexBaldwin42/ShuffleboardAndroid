@@ -46,14 +46,25 @@ public class MainActivity extends AppCompatActivity {
     TextView tvP1;
     TextView tvP2Score;
     TextView tvP2;
-    //TextView[] tvPlayer1RoundScores = new TextView[5];
-    //TextView[] tvPlayer2RoundScores = new TextView[5];
-    //TextView[] tvRoundHeaders = new TextView[6];
+
     TextView tvShotsTaken;
     TextView tvRounds;
     TextView tvShotHistory;
 
-    //TextView tvTest;
+    public String SHOT_HISTORY_TEXT_KEY = "shotHistoryKey";
+    public String ROUNDS_KEY ="roundsKey";
+    public String SHOTS_TAKEN_KEY = "shotTakenKey";
+    public String P1_SCORE_KEY = "P1ScoreKey";
+    public String P2_SCORE_KEY = "P2ScoreKey";
+    public String SHOT_COUNTER_KEY = "shotCounterKey";
+    public String CURRENT_ROUND_KEY = "currentRoundKey";
+    public String CURRENT_ROUND_SCORE_KEY = "currentRoundScoreKey";
+    public String P1_FINAL_SCORE_KEY = "P1FinalScoreKey";
+    public String P2_FINAL_SCORE_KEY = "P2FinalScoreKey";
+    public String FIRST_SHOT_KEY = "firstShotKey";
+    public String P1_TURN_KEY = "p1TurnKey";
+
+
 
 
     @Override
@@ -289,6 +300,33 @@ public class MainActivity extends AppCompatActivity {
 
     }//end of onCreate
 
+
+    @Override
+    protected void onResume() {
+        //TODO implement setup get corret UUID for bluetooth device
+       /* UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+        try {
+
+            mSocket = mDevice.createRfcommSocketToServiceRecord(uuid);
+            if (!mSocket.isConnected()) {
+                mSocket.connect();
+            }
+
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (!mBluetoothAdapter.isEnabled())
+
+        {
+            Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBluetooth, 0);
+        }
+*/
+        super.onResume();
+
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main, menu);
@@ -325,25 +363,6 @@ public class MainActivity extends AppCompatActivity {
                     tvP2Score.setText("0");
                 }
                 break;
-            case R.id.action_next_turn:
-                currentRoundScore = 0;
-                if (p1Turn == true) {
-                    p1Turn = false;
-                    tvP1.setBackgroundColor(Color.WHITE);
-                    tvP2.setBackgroundColor(Color.RED);
-                } else {
-                    p1Turn = true;
-                    tvP2.setBackgroundColor(Color.WHITE);
-                    tvP1.setBackgroundColor(Color.RED);
-                    //tvRoundHeaders[currentRound].setBackgroundColor(Color.WHITE);
-                    currentRound += 1;
-                    //tvRoundHeaders[currentRound].setBackgroundColor(Color.RED);
-                    if (currentRound > 4) {
-                        //Game is over
-                        //tvTest.setText("Game is over");
-                    }
-                }
-                break;
         }
 
 
@@ -354,13 +373,40 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         //Todo save important variables
+        outState.putString(SHOT_HISTORY_TEXT_KEY, tvShotHistory.getText().toString());
+        outState.putString(ROUNDS_KEY, tvRounds.getText().toString());
+        outState.putString(SHOTS_TAKEN_KEY, tvShotsTaken.getText().toString());
+        outState.putString(P1_SCORE_KEY, tvP1Score.getText().toString());
+        outState.putString(P2_SCORE_KEY, tvP2Score.getText().toString());
 
+        outState.putInt(SHOT_COUNTER_KEY, shotCounter);
+        outState.putInt(CURRENT_ROUND_KEY, currentRound);
+        outState.putInt(CURRENT_ROUND_SCORE_KEY, currentRoundScore);
+        outState.putInt(P1_FINAL_SCORE_KEY, p1FinalScore);
+        outState.putInt(P2_FINAL_SCORE_KEY, p2FinalScore);
+
+        outState.putBoolean(P1_TURN_KEY, p1Turn);
+        outState.putBoolean(FIRST_SHOT_KEY, firstShot);
     }
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         //Todo restore important variables and update views
+        tvShotHistory.setText(savedInstanceState.getString(SHOT_HISTORY_TEXT_KEY));
+        tvRounds.setText(savedInstanceState.getString(ROUNDS_KEY));
+        tvShotsTaken.setText(savedInstanceState.getString(SHOTS_TAKEN_KEY));
+        tvP1Score.setText(savedInstanceState.getString(P1_SCORE_KEY));
+        tvP2Score.setText(savedInstanceState.getString(P2_SCORE_KEY));
+
+        shotCounter = savedInstanceState.getInt(SHOT_COUNTER_KEY);
+        currentRound = savedInstanceState.getInt(CURRENT_ROUND_KEY);
+        currentRoundScore = savedInstanceState.getInt(CURRENT_ROUND_SCORE_KEY);
+        p1FinalScore = savedInstanceState.getInt(P1_FINAL_SCORE_KEY);
+        p2FinalScore = savedInstanceState.getInt(P2_FINAL_SCORE_KEY);
+
+        p1Turn = savedInstanceState.getBoolean(P1_TURN_KEY);
+        firstShot = savedInstanceState.getBoolean(FIRST_SHOT_KEY);
     }
 
     @Override
@@ -368,10 +414,6 @@ public class MainActivity extends AppCompatActivity {
         super.onStart();
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-    }
 
 
     @Override
